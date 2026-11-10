@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cinema 3D Converter</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  padding:20px;
+  background:#080d19;
+  color:white;
+  font-family:Arial,sans-serif;
+}
+h1{text-align:center;color:#00d9ff}
+.subtitle{text-align:center;color:#aaa}
+.card{
+  background:#151f32;
+  padding:18px;
+  border-radius:16px;
+  margin-top:20px;
+}
+button{
+  background:#00bcd4;
+  color:#00121a;
+  border:0;
+  padding:13px 18px;
+  border-radius:9px;
+  font-weight:bold;
+  margin:5px;
+}
+input[type=file]{width:100%;margin:15px 0}
+input[type=range]{width:100%}
+.screen{
+  display:flex;
+  width:100%;
+  overflow:hidden;
+  background:black;
+  aspect-ratio:16/9;
+  align-items:center;
+}
+.screen video{
+  width:50%;
+  height:100%;
+  object-fit:contain;
+}
+.note{color:#b9c8dc;font-size:13px;line-height:1.5}
+</style>
+</head>
+
+<body>
+<h1>🎬 Cinema 3D Converter</h1>
+<p class="subtitle">Watch videos in side-by-side 3D mode</p>
+
+<div class="card">
+  <h3>Select your video</h3>
+  <input type="file" id="file" accept="video/*">
+</div>
+
+<div class="card">
+  <h3>3D Preview</h3>
+  <div class="screen">
+    <video id="left" playsinline></video>
+    <video id="right" playsinline></video>
+  </div>
+
+  <button onclick="playVideo()">▶ Play</button>
+  <button onclick="pauseVideo()">⏸ Pause</button>
+</div>
+
+<div class="card">
+  <h3>Adjust 3D depth</h3>
+  <input type="range" id="depth" min="0" max="40" value="10">
+  <p class="note">Move the slider to adjust the horizontal separation.</p>
+</div>
+
+<div class="card">
+  <p class="note">
+    This is an experimental side-by-side preview. It duplicates the
+    same video and shifts the images; it does not calculate real
+    3D depth or create true stereoscopic footage.
+  </p>
+</div>
+
+<script>
+const left = document.getElementById("left");
+const right = document.getElementById("right");
+let videoURL = null;
+
+document.getElementById("file").addEventListener("change", function(){
+  if(!this.files || !this.files[0]) return;
+
+  if(videoURL) URL.revokeObjectURL(videoURL);
+  videoURL = URL.createObjectURL(this.files[0]);
+
+  left.src = videoURL;
+  right.src = videoURL;
+  left.load();
+  right.load();
+});
+
+async function playVideo(){
+  if(!left.src) {
+    alert("Please select a video first.");
+    return;
+  }
+  try {
+    await left.play();
+    await right.play();
+  } catch(e) {
+    alert("Unable to play this video format.");
+  }
+}
+
+function pauseVideo(){
+  left.pause();
+  right.pause();
+}
+
+document.getElementById("depth").addEventListener("input",function(){
+  const amount = Number(this.value);
+  left.style.transform = `translateX(-${amount/2}px)`;
+  right.style.transform = `translateX(${amount/2}px)`;
+});
+
+left.addEventListener("timeupdate",function(){
+  if(Math.abs(right.currentTime-left.currentTime)>0.15){
+    right.currentTime=left.currentTime;
+  }
+});
+</script>
+</body>
+</html>
